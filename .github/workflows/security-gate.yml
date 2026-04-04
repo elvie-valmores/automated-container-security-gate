@@ -1,0 +1,35 @@
+name: DevSecOps Container Gate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build the Docker Image
+        run: docker build -t vulnerable-app:latest .
+
+      # Gate 1: GRC / Misconfiguration Scanner
+      - name: Trivy Config Scan (GRC)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          exit-code: '1' # This crashes the pipeline if it fails
+          severity: 'HIGH,CRITICAL'
+
+      # Gate 2: Vulnerability Scanner (CVEs)
+      - name: Trivy Image Scan (CVEs)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'vulnerable-app:latest'
+          format: 'table'
+          exit-code: '1' # This crashes the pipeline if it fails
+          severity: 'HIGH,CRITICAL'
