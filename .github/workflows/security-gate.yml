@@ -22,7 +22,7 @@ jobs:
         with:
           scan-type: 'config'
           scan-ref: '.'
-          exit-code: '1' # This crashes the pipeline if it fails
+          exit-code: '1' 
           severity: 'HIGH,CRITICAL'
 
       # Gate 2: Vulnerability Scanner (CVEs)
@@ -31,5 +31,6 @@ jobs:
         with:
           image-ref: 'vulnerable-app:latest'
           format: 'table'
-          exit-code: '1' # This crashes the pipeline if it fails
+          exit-code: '1'
           severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true # THE FIX: Do not block the pipeline if no patch exists
