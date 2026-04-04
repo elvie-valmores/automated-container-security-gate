@@ -1,14 +1,12 @@
-# 1. THE VULNERABILITY RISK: 
-# Using an ancient version of Node.js that is packed with Critical CVEs.
-FROM node:14-alpine
+# 1. REMEDIATION: Using a modern, patched version of Node.js
+FROM node:20-alpine
 
 # Set the working directory
 WORKDIR /app
 
-# 2. THE GRC / COMPLIANCE RISK:
-# Explicitly running the container as the root user. 
-# This is a massive violation of the CIS Docker Benchmarks.
-USER root
+# 2. REMEDIATION: Enforcing Least Privilege
+# We switch away from root to the limited 'node' user built into this image
+USER node
 
-# A dummy command just to keep the container alive if we were to run it
-CMD ["echo", "Running a highly vulnerable container!"]
+# A dummy command to keep it running
+CMD ["echo", "Running a secure, compliant container!"]
