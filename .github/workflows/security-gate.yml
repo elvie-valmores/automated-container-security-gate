@@ -10,9 +10,20 @@ jobs:
   security-scanning:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Download the code to the runner
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Gate 0: Infrastructure as Code (IaC) Scanner (Scan the foundation first!)
+      - name: Trivy IaC Scan (Terraform)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './terraform' 
+          exit-code: '1' 
+          severity: 'HIGH,CRITICAL'
+
+      # Step 2: Build the application
       - name: Build the Docker Image
         run: docker build -t vulnerable-app:latest .
 
@@ -32,5 +43,5 @@ jobs:
           image-ref: 'vulnerable-app:latest'
           format: 'table'
           exit-code: '1'
-          severity: 'CRITICAL' # THE FIX: Only block the pipeline for Critical CVEs
+          severity: 'CRITICAL' 
           ignore-unfixed: true
