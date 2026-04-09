@@ -1,12 +1,12 @@
-# 1. REMEDIATION: Using a modern, patched version of Node.js
-FROM node:20-alpine
+# 🚨 VIOLATION: Using the non-deterministic :latest tag
+FROM node:latest
 
-# Set the working directory
 WORKDIR /app
 
-# 2. REMEDIATION: Enforcing Least Privilege
-# We switch away from root to the limited 'node' user built into this image
-USER node
+# 🚨 VIOLATION: Using ADD instead of COPY
+ADD http://example.com/some_script.sh /app/script.sh
 
-# A dummy command to keep it running
-CMD ["echo", "Running a secure, compliant container!"]
+# 🚨 VIOLATION: Missing a HEALTHCHECK instruction entirely
+
+USER node
+CMD ["echo", "Running the application"]
