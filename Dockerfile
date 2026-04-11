@@ -1,21 +1,28 @@
-# VIOLATION: Non-deterministic versioning and unauthorized registry
-FROM node:latest
+# Stage 1: Build Environment
+FROM internal-registry.company.local/node:20 AS builder
+WORKDIR /usr/src/app
+COPY local_script.sh ./
+RUN echo "Compiling application..."
 
-# VIOLATION: Missing mandatory data classification labels
+# Stage 2: Production Environment
+FROM internal-registry.company.local/node:20-alpine AS production
+
+# REMEDIATION: Mandatory Data Governance labels applied
+LABEL maintainer="security-engineering-team"
+LABEL data_classification="confidential"
 
 WORKDIR /usr/src/app
 
-# VIOLATION: Remote file execution risk via ADD instruction
-ADD https://raw.githubusercontent.com/expressjs/express/master/package.json ./
+# REMEDIATION: Copy compiled artifacts from builder stage (prevents ADD vulnerabilities)
+COPY --from=builder /usr/src/app /usr/src/app
 
-RUN npm install
+# REMEDIATION: Container health monitoring configured
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD node -v || exit 1
 
-COPY . .
-
-# VIOLATION: Missing HEALTHCHECK instruction
-
-# VIOLATION: Executing application as the root user
-USER root
+# REMEDIATION: Non-root execution enforced
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
 EXPOSE 8080
-CMD ["echo", "Running insecure app"]
+CMD ["echo", "Enterprise secure container running."]

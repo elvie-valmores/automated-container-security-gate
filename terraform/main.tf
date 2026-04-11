@@ -2,13 +2,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VIOLATION: Hardcoded Cloud Credentials (Secret Scanning Trigger)
-variable "aws_access_key" {
-  default     = "AKIAIOSFODNN7EXAMPLE"
-  description = "Temporary credentials for local testing"
+# REMEDIATION: KMS Key for cryptographic control
+resource "aws_kms_key" "enterprise_ebs_key" {
+  description             = "CMK for encrypting application block storage"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
 }
 
-# VIOLATION: CIS AWS 5.2 - Security Group open to the public internet
+# REMEDIATION: Security Group ingress strictly scoped to private corporate CIDR
 resource "aws_security_group" "app_sg" {
   name        = "enterprise_app_sg"
   description = "Application Security Group"
@@ -17,28 +18,29 @@ resource "aws_security_group" "app_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] 
+    cidr_blocks = ["10.0.0.0/8"] 
   }
 }
 
-# VIOLATION: CIS AWS 2.2.1 - Unencrypted Block Storage
+# REMEDIATION: EBS volume encrypted using Customer Managed Key (CMK)
 resource "aws_ebs_volume" "app_data" {
   availability_zone = "us-east-1a"
   size              = 100
-  encrypted         = false 
+  encrypted         = true
+  kms_key_id        = aws_kms_key.enterprise_ebs_key.arn
 }
 
-# VIOLATION: CIS AWS 1.16 - IAM Wildcard (Privilege Escalation Risk)
+# REMEDIATION: Principle of Least Privilege enforced via explicit resource ARNs
 resource "aws_iam_policy" "app_execution_role" {
   name        = "app_execution_role"
-  description = "Standard application execution role"
+  description = "Scoped application execution role"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action   = "*" 
+        Action   = ["ec2:DescribeVolumes"] 
         Effect   = "Allow"
-        Resource = "*"
+        Resource = [aws_ebs_volume.app_data.arn]
       },
     ]
   })
